@@ -1,0 +1,150 @@
+import { createFileRoute, Navigate, Link } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { CheckpointCard, type CheckpointStatus } from "@/components/CheckpointCard";
+import { BottomNav } from "@/components/BottomNav";
+import { Trophy, Flame } from "lucide-react";
+
+export const Route = createFileRoute("/dashboard")({
+  component: Dashboard,
+});
+
+type Jornada = {
+  id: string;
+  dia_number: number;
+  dia_label: string | null;
+  titulo: string | null;
+  preletor: string | null;
+  data_real: string | null;
+};
+
+type Progresso = {
+  jornada_id: string;
+  qr_code_escaneado: boolean;
+  quiz_concluido: boolean;
+  pontos_acumulados: number;
+};
+
+function Dashboard() {
+  const { user, profile, loading } = useAuth();
+  const [jornadas, setJornadas] = useState<Jornada[]>([]);
+  const [progresso, setProgresso] = useState<Record<string, Progresso>>({});
+  const [rank, setRank] = useState<{ position: number; total: number } | null>(null);
+  const [dataLoading, setDataLoading] = useState(true);
+
+  useEffect(() => {
+    if (!user) return;
+    (async () => {
+      const [{ data: js }, { data: pg }, { data: rk }] = await Promise.all([
+        supabase.from("jornadas").select("id, dia_number, dia_label, titulo, preletor, data_real").order("dia_number"),
+        supabase.from("progresso_usuario").select("jornada_id, qr_code_escaneado, quiz_concluido, pontos_acumulados").eq("user_id", user.id),
+        supabase.rpc("get_user_rank", { target_user_id: user.id }),
+      ]);
+      setJornadas((js ?? []) as Jornada[]);
+      const map: Record<string, Progresso> = {};
+      (pg ?? []).forEach((p) => { map[p.jornada_id] = p as Progresso; });
+      setProgresso(map);
+      if (rk && rk[0]) setRank({ position: Number(rk[0].position), total: Number(rk[0].total_users) });
+      setDataLoading(false);
+    })();
+  }, [user]);
+
+  if (loading) return <FullScreenLoader />;
+  if (!user) return <Navigate to="/login" />;
+
+  // Determine status: locked / live / unlocked / done
+  // "live" = current turn the user can scan now (first not-yet-unlocked turn)
+  const computeStatus = (j: Jornada): CheckpointStatus => {
+    const p = progresso[j.id];
+    if (p?.quiz_concluido) return "done";
+    if (p?.qr_code_escaneado) return "unlocked";
+    // not unlocked yet — is previous turn unlocked or this is turn 1?
+    if (j.dia_number === 1) return "live";
+    const prev = jornadas.find((x) => x.dia_number === j.dia_number - 1);
+    if (prev && progresso[prev.id]?.qr_code_escaneado) return "live";
+    return "locked";
+  };
+
+  const totalPoints = profile?.total_points ?? 0;
+  const completedDays = profile?.completed_days ?? 0;
+
+  return (
+    <div className="min-h-screen bg-background pb-24">
+      {/* Header */}
+      <header
+        className="noise-overlay relative animate-gradient overflow-hidden px-5 pb-6 pt-10"
+        style={{ background: "var(--gradient-festival)" }}
+      >
+        <div className="relative z-10">
+          <p className="font-script text-lg text-ink/70">Olá,</p>
+          <h1 className="font-display text-3xl leading-tight tracking-wider text-ink">
+            {(profile?.full_name ?? "Avivado").toUpperCase()}
+          </h1>
+        </div>
+      </header>
+
+      {/* Stats */}
+      <section className="-mt-4 px-5">
+        <div className="grid grid-cols-3 gap-2 rounded-2xl border border-border bg-card p-4 shadow-lg">
+          <Stat icon={<Flame className="h-4 w-4 text-orange" />} label="Pontos" value={totalPoints} />
+          <Stat icon={<Trophy className="h-4 w-4 text-yellow" />} label="Posição" value={rank ? `${rank.position}º` : "—"} />
+          <Stat label="Turnos" value={`${completedDays}/4`} />
+        </div>
+      </section>
+
+      {/* Checkpoints */}
+      <section className="px-5 py-6">
+        <div className="mb-4 flex items-baseline justify-between">
+          <h2 className="font-display text-2xl tracking-wider text-orange">SUA JORNADA</h2>
+          <Link to="/ranking" className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground hover:text-orange">
+            Ver ranking →
+          </Link>
+        </div>
+
+        {dataLoading ? (
+          <div className="space-y-3">
+            {[0, 1, 2, 3].map((i) => (
+              <div key={i} className="h-40 animate-pulse rounded-2xl bg-card" />
+            ))}
+          </div>
+        ) : (
+          <div className="grid gap-4 sm:grid-cols-2">
+            {jornadas.map((j) => (
+              <CheckpointCard
+                key={j.id}
+                dayNumber={j.dia_number}
+                dayLabel={j.dia_label ?? `Turno ${j.dia_number}`}
+                title={j.titulo ?? `Turno ${j.dia_number}`}
+                preletor={j.preletor}
+                pontos={progresso[j.id]?.pontos_acumulados ?? 0}
+                status={computeStatus(j)}
+              />
+            ))}
+          </div>
+        )}
+      </section>
+
+      <BottomNav />
+    </div>
+  );
+}
+
+function Stat({ icon, label, value }: { icon?: React.ReactNode; label: string; value: string | number }) {
+  return (
+    <div className="text-center">
+      <div className="mb-1 flex items-center justify-center gap-1 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+        {icon} {label}
+      </div>
+      <div className="font-display text-2xl tracking-wider text-foreground">{value}</div>
+    </div>
+  );
+}
+
+function FullScreenLoader() {
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-background">
+      <div className="font-display text-2xl tracking-widest text-orange">CARREGANDO…</div>
+    </div>
+  );
+}
