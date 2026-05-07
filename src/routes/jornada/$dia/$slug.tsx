@@ -1,6 +1,6 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+﻿import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
-import { ArrowLeft, QrCode, Sparkles, Trophy, Info, Pencil, X, Save, Check, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, QrCode, Sparkles, Trophy, Info, Pencil, X, Save, Check, Plus, Trash2, Eye } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Quiz } from "@/components/Quiz";
@@ -60,6 +60,7 @@ function TurnoPage() {
   const [showEdit, setShowEdit] = useState(false);
   const [showCelebration, setShowCelebration] = useState(false);
   const [pageLoading, setPageLoading] = useState(true);
+  const [headerRevealed, setHeaderRevealed] = useState(false);
 
   const isAdmin = profile?.role === 'admin';
   const isPastor = profile?.role === 'pastor';
@@ -147,13 +148,34 @@ function TurnoPage() {
           <p className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-white/60">
             Turno {jornada.dia_number}
           </p>
-          <h1 className="mt-1 font-display text-4xl leading-none tracking-wider text-white">
-            {(jornada.titulo ?? "").toUpperCase()}
-          </h1>
-          {jornada.preletores && jornada.preletores.length > 0 && (
-            <p className="mt-2 text-sm text-white/60">
-              com {jornada.preletores.join(', ')}
-            </p>
+          {!unlocked && !headerRevealed ? (
+            <div className="flex items-start gap-2">
+              <h1 className="mt-1 select-none font-display text-4xl leading-none tracking-wider text-white blur-sm">
+                Tema do Turno
+              </h1>
+              {isPrivileged && (
+                <button
+                  onClick={() => setHeaderRevealed(true)}
+                  className="mt-1.5 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-white/20 text-white transition-colors hover:bg-white/30"
+                  aria-label="Revelar título"
+                >
+                  <Eye className="h-4 w-4" />
+                </button>
+              )}
+            </div>
+          ) : (
+            <h1 className="mt-1 font-display text-4xl leading-none tracking-wider text-white">
+              {(jornada.titulo ?? "").toUpperCase()}
+            </h1>
+          )}
+          {!unlocked && !headerRevealed ? (
+            <p className="mt-2 select-none text-sm text-white/60 blur-sm">com Preletor Convidado</p>
+          ) : (
+            jornada.preletores && jornada.preletores.length > 0 && (
+              <p className="mt-2 text-sm text-white/60">
+                com {jornada.preletores.join(', ')}
+              </p>
+            )
           )}
           {isPrivileged && (
             <span className="mt-4 inline-block rounded-full bg-white/20 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-white">
@@ -540,7 +562,7 @@ function CelebrationSplash({ onDone }: { onDone: () => void }) {
           ))}
 
           <img
-            src="/images/rivaldo-png/rivaldo-surfando.png"
+            src="/images/rivaldo-png/rivaldo-surf.webp"
             alt="Rivaldo surfando"
             className="rvl-mascot relative z-10 h-64 w-64 select-none object-contain drop-shadow-2xl"
             draggable={false}

@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { ArrowLeft, Trophy } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { BottomNav } from "@/components/BottomNav";
@@ -18,18 +18,13 @@ type RankRow = {
   avatar_url?: string | null;
   image_url?: string | null;
   total_points?: number;
-  points_in_turno?: number;
   position?: number;
   rank_pos?: number;
 };
 
-type Turno = { dia_number: number; dia_label: string | null };
-
 function RankingPage() {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
-  const [tab, setTab] = useState<"geral" | number>("geral");
-  const [turnos, setTurnos] = useState<Turno[]>([]);
   const [rows, setRows] = useState<RankRow[]>([]);
   const [meRank, setMeRank] = useState<{ position: number; total: number; points: number } | null>(null);
   const [loadingData, setLoadingData] = useState(true);
@@ -41,33 +36,21 @@ function RankingPage() {
   }, [user, loading, navigate]);
 
   useEffect(() => {
-    supabase.from("jornadas").select("dia_number, dia_label").order("dia_number").then(({ data }) => {
-      setTurnos((data ?? []) as Turno[]);
-    });
-  }, []);
-
-  useEffect(() => {
     if (!user) return;
     setLoadingData(true);
     (async () => {
       try {
-        if (tab === "geral") {
-          const [{ data }, { data: me }] = await Promise.all([
-            supabase.rpc("get_ranking", { limit_count: 100 }),
-            supabase.rpc("get_user_rank", { target_user_id: user.id }),
-          ]);
-          setRows((data ?? []) as RankRow[]);
-          if (me && me[0]) {
-            setMeRank({
-              position: Number(me[0].position),
-              total: Number(me[0].total_users),
-              points: Number(me[0].user_total_points),
-            });
-          }
-        } else {
-          const { data } = await supabase.rpc("get_turno_ranking", { p_turno_number: tab, p_limit: 100 });
-          setRows((data ?? []) as RankRow[]);
-          setMeRank(null);
+        const [{ data }, { data: me }] = await Promise.all([
+          supabase.rpc("get_ranking", { limit_count: 100 }),
+          supabase.rpc("get_user_rank", { target_user_id: user.id }),
+        ]);
+        setRows((data ?? []) as RankRow[]);
+        if (me && me[0]) {
+          setMeRank({
+            position: Number(me[0].position),
+            total: Number(me[0].total_users),
+            points: Number(me[0].user_total_points),
+          });
         }
       } catch (err) {
         console.error("Error loading ranking data:", err);
@@ -75,7 +58,7 @@ function RankingPage() {
         setLoadingData(false);
       }
     })();
-  }, [tab, user?.id]);
+  }, [user?.id]);
 
   if (loading) return <Loader />;
   if (!user) return null;
@@ -94,24 +77,25 @@ function RankingPage() {
             <p className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-white/60">Pódio</p>
             <h1 className="font-display text-4xl leading-none tracking-wider text-white">RANKING</h1>
           </div>
-          <Trophy className="h-10 w-10 text-white/70" />
+        </div>
+        {/* Rivaldo no pódio — empurrado além da borda direita, recortado pelo overflow-hidden */}
+        <div
+          className="pointer-events-none absolute bottom-0 right-0"
+          style={{ transform: "translateX(20px)" }}
+        >
+          <img
+            src="/images/rivaldo-png/rivaldo-podio.webp"
+            alt=""
+            aria-hidden
+            draggable={false}
+            className="block select-none"
+            style={{ height: "140px", width: "140px", objectFit: "contain" }}
+          />
         </div>
       </header>
 
-      {/* Tabs */}
-      <div className="sticky top-0 z-20 -mt-4 px-5">
-        <div className="flex gap-2 overflow-x-auto rounded-2xl border border-border bg-white/80 p-2 shadow-sm backdrop-blur-md [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          <TabBtn active={tab === "geral"} onClick={() => setTab("geral")}>Geral</TabBtn>
-          {turnos.map((t) => (
-            <TabBtn key={t.dia_number} active={tab === t.dia_number} onClick={() => setTab(t.dia_number)}>
-              T{t.dia_number}
-            </TabBtn>
-          ))}
-        </div>
-      </div>
-
       {/* Self position banner */}
-      {tab === "geral" && meRank && (
+      {meRank && (
         <div className="mx-5 mt-4 flex items-center justify-between rounded-2xl border border-orange/40 bg-orange/5 px-5 py-3">
           <div>
             <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Sua posição</p>
@@ -139,7 +123,7 @@ function RankingPage() {
               const pos = Number(r.position ?? r.rank_pos ?? i + 1);
               const id = r.id ?? r.user_id;
               const name = (r.name ?? r.full_name ?? r.email ?? "Anônimo")!;
-              const pts = Math.round(Number(r.total_points ?? r.points_in_turno ?? 0));
+              const pts = Math.round(Number(r.total_points ?? 0));
               const isMe = id === user.id;
               return (
                 <li
@@ -170,19 +154,6 @@ function RankingPage() {
 
       <BottomNav />
     </div>
-  );
-}
-
-function TabBtn({ active, children, onClick }: { active: boolean; children: React.ReactNode; onClick: () => void }) {
-  return (
-    <button
-      onClick={onClick}
-      className={`flex-shrink-0 rounded-lg px-4 py-2 font-display text-sm tracking-wider transition-all ${
-        active ? "bg-[linear-gradient(135deg,#EC6B28,#F6C441)] text-white shadow-[var(--shadow-glow-orange)]" : "text-muted-foreground hover:text-ink hover:bg-muted/20"
-      }`}
-    >
-      {children}
-    </button>
   );
 }
 

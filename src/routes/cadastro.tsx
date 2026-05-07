@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ArrowLeft, Mail, Lock, User as UserIcon, Phone, Eye, EyeOff } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
@@ -14,22 +14,12 @@ function CadastroPage() {
   const [form, setForm] = useState({ name: "", email: "", phone: "", password: "" });
   const [submitting, setSubmitting] = useState(false);
   const [nameError, setNameError] = useState("");
+  const didNavigate = useRef(false);
 
-  // Toda navegação pós-auth fica aqui — evita conflito com handleConfirm
+  // Fallback: se o usuário já estiver logado ao abrir a página, redireciona
   useEffect(() => {
-    if (!user) return;
-    const pending = sessionStorage.getItem("pending_unlock");
-    if (pending) {
-      try {
-        const { day, token } = JSON.parse(pending);
-        sessionStorage.removeItem("pending_unlock");
-        navigate({ to: "/unlock", search: { day, token } });
-      } catch {
-        navigate({ to: "/dashboard" });
-      }
-    } else {
-      navigate({ to: "/dashboard" });
-    }
+    if (!user || didNavigate.current) return;
+    navigate({ to: "/dashboard" });
   }, [user, navigate]);
 
   const [showConfirm, setShowConfirm] = useState(false);
@@ -80,7 +70,17 @@ function CadastroPage() {
       return;
     }
     toast.success("Conta criada! Você já pode jogar.");
-    // navegação tratada pelo useEffect acima quando user atualizar
+    didNavigate.current = true;
+    const pending = sessionStorage.getItem("pending_unlock");
+    if (pending) {
+      try {
+        const { day, token } = JSON.parse(pending);
+        sessionStorage.removeItem("pending_unlock");
+        navigate({ to: "/unlock", search: { day, token } });
+        return;
+      } catch {}
+    }
+    navigate({ to: "/dashboard" });
   };
 
   return (

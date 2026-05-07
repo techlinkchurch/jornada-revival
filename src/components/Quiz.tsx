@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+﻿import { useEffect, useRef, useState } from "react";
 import { X, Check, Zap, Trophy, Clock, Star } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -294,10 +294,10 @@ export function Quiz({ jornadaId, onClose, onComplete }: {
             <div className="mb-2 flex justify-center">
               <img
                 src={!feedback.isCorrect
-                  ? "/images/rivaldo-png/rivaldo-chorando.png"
+                  ? "/images/rivaldo-png/rivaldo-chorando.webp"
                   : feedback.timeTaken <= feedback.penaltyTime
-                  ? "/images/rivaldo-png/rivaldo-explodindo.png"
-                  : "/images/rivaldo-png/rivaldo-feliz.png"}
+                  ? "/images/rivaldo-png/rivaldo-explodindo.webp"
+                  : "/images/rivaldo-png/rivaldo-feliz.webp"}
                 alt=""
                 aria-hidden
                 draggable={false}
@@ -388,7 +388,7 @@ function InstructionsScreen({ settings, onStart, onClose }: {
             style={{ background: "var(--gradient-fire)", transform: "scale(0.8)" }}
           />
           <img
-            src="/images/rivaldo-png/rivaldo-focado.png"
+            src="/images/rivaldo-png/rivaldo-focado.webp"
             alt="Rivaldo focado"
             className="rvl-quiz-mascot h-36 w-36 select-none object-contain drop-shadow-xl"
             draggable={false}
@@ -534,7 +534,7 @@ function CalculatingScreen({ error, onClose }: { error: string | null; onClose: 
         ) : (
           <>
             <img
-              src="/images/rivaldo-png/rivaldo-espionando-2.png"
+              src="/images/rivaldo-png/rivaldo-espionando-2.webp"
               alt=""
               aria-hidden
               draggable={false}

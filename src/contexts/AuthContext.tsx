@@ -12,6 +12,7 @@ type Profile = {
   total_points: number;
   completed_days: number;
   achievements: string[];
+  onboarding_visto: boolean;
 };
 
 type AuthContextValue = {

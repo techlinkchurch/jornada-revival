@@ -18,6 +18,8 @@ export const Route = createFileRoute("/unlock")({
 type Status = "working" | "auth_required" | "ok" | "error";
 type UnlockResult = { day: number; points: number };
 
+const RIVALDO_IMAGES = ["rivaldo-qrcode", "rivaldo-quasela", "rivaldo-surf"];
+
 function UnlockHandler() {
   const { day, token } = Route.useSearch();
   const { refreshProfile } = useAuth();
@@ -25,6 +27,14 @@ function UnlockHandler() {
   const [status, setStatus] = useState<Status>("working");
   const [message, setMessage] = useState("Validando QR Code…");
   const [unlockResult, setUnlockResult] = useState<UnlockResult | null>(null);
+
+  // Preload all Rivaldo images immediately so they're ready when each screen appears
+  useEffect(() => {
+    RIVALDO_IMAGES.forEach((name) => {
+      const img = new Image();
+      img.src = `/images/rivaldo-png/${name}.webp`;
+    });
+  }, []);
 
   useEffect(() => {
     (async () => {
@@ -84,16 +94,7 @@ function UnlockHandler() {
       `}</style>
 
       {status === "working" && (
-        <div className="rvl-surf relative mb-6 h-36 w-36">
-          <img
-            src="/images/rivaldo-png/rivaldo-qrcode.png"
-            alt=""
-            aria-hidden
-            draggable={false}
-            className="h-full w-full select-none object-contain"
-          />
-          <div className="absolute bottom-0 left-0 right-0 h-10 bg-gradient-to-t from-background to-transparent" />
-        </div>
+        <WorkingImage />
       )}
 
       {status === "error" && (
@@ -116,8 +117,26 @@ function UnlockHandler() {
   );
 }
 
+function WorkingImage() {
+  const [loaded, setLoaded] = useState(false);
+  return (
+    <div className="rvl-surf relative mb-6 h-36 w-36">
+      <img
+        src="/images/rivaldo-png/rivaldo-qrcode.webp"
+        alt=""
+        aria-hidden
+        draggable={false}
+        onLoad={() => setLoaded(true)}
+        className={`h-full w-full select-none object-contain transition-opacity duration-300 ${loaded ? "opacity-100" : "opacity-0"}`}
+      />
+      <div className="absolute bottom-0 left-0 right-0 h-10 bg-gradient-to-t from-background to-transparent" />
+    </div>
+  );
+}
+
 function SuccessScreen({ result, navigate }: { result: UnlockResult; navigate: ReturnType<typeof useNavigate> }) {
   const [countdown, setCountdown] = useState(5);
+  const [imgLoaded, setImgLoaded] = useState(false);
 
   useEffect(() => {
     if (countdown <= 0) {
@@ -148,11 +167,12 @@ function SuccessScreen({ result, navigate }: { result: UnlockResult; navigate: R
 
       <div className="rvl-celebrate relative mb-4 h-56 w-56">
         <img
-          src="/images/rivaldo-png/rivaldo-surf.png"
+          src="/images/rivaldo-png/rivaldo-surf.webp"
           alt=""
           aria-hidden
           draggable={false}
-          className="h-full w-full select-none object-contain"
+          onLoad={() => setImgLoaded(true)}
+          className={`h-full w-full select-none object-contain transition-opacity duration-300 ${imgLoaded ? "opacity-100" : "opacity-0"}`}
         />
       </div>
 
@@ -176,6 +196,8 @@ function SuccessScreen({ result, navigate }: { result: UnlockResult; navigate: R
 }
 
 function AuthRequiredScreen({ day, navigate }: { day?: number; navigate: ReturnType<typeof useNavigate> }) {
+  const [imgLoaded, setImgLoaded] = useState(false);
+
   const goTo = (to: "/login" | "/cadastro") => {
     navigate({ to });
   };
@@ -200,11 +222,12 @@ function AuthRequiredScreen({ day, navigate }: { day?: number; navigate: ReturnT
 
       <div className="rvl-feliz relative mb-6 h-36 w-36">
         <img
-          src="/images/rivaldo-png/rivaldo-quasela.png"
+          src="/images/rivaldo-png/rivaldo-quasela.webp"
           alt=""
           aria-hidden
           draggable={false}
-          className="h-full w-full select-none object-contain"
+          onLoad={() => setImgLoaded(true)}
+          className={`h-full w-full select-none object-contain transition-opacity duration-500 ${imgLoaded ? "opacity-100" : "opacity-0"}`}
         />
         <div className="absolute bottom-0 left-0 right-0 h-10 bg-gradient-to-t from-background to-transparent" />
       </div>

@@ -1,10 +1,11 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+﻿import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { CheckpointCard, type CheckpointStatus } from "@/components/CheckpointCard";
 import { BottomNav } from "@/components/BottomNav";
-import { Trophy, Flame } from "lucide-react";
+import { OnboardingModal } from "@/components/OnboardingModal";
+import { Trophy, Flame, GraduationCap } from "lucide-react";
 
 export const Route = createFileRoute("/dashboard")({
   component: Dashboard,
@@ -17,6 +18,7 @@ type Jornada = {
   titulo: string | null;
   preletores: string[] | null;
   data_real: string | null;
+  censored: boolean;
 };
 
 type Progresso = {
@@ -35,11 +37,13 @@ const slugify = (text: string) =>
     .replace(/^-+|-+$/g, "");
 
 function Dashboard() {
-  const { user, profile, loading } = useAuth();
+  const { user, profile, loading, refreshProfile } = useAuth();
   const [jornadas, setJornadas] = useState<Jornada[]>([]);
   const [progresso, setProgresso] = useState<Record<string, Progresso>>({});
   const [rank, setRank] = useState<{ position: number; total: number } | null>(null);
   const [dataLoading, setDataLoading] = useState(true);
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [revealedJornadas, setRevealedJornadas] = useState<Record<string, { titulo: string | null; preletores: string[] | null }>>({});
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -49,6 +53,13 @@ function Dashboard() {
     }
   }, [user, loading, navigate]);
 
+  // Abre onboarding automaticamente no primeiro acesso
+  useEffect(() => {
+    if (profile && profile.onboarding_visto === false) {
+      setShowOnboarding(true);
+    }
+  }, [profile?.onboarding_visto]);
+
   useEffect(() => {
     if (!user) return;
     (async () => {
@@ -56,7 +67,7 @@ function Dashboard() {
         setDataLoading(true);
         console.log("Fetching dashboard data for user:", user.id);
         const [{ data: js }, { data: pg }, { data: rk }] = await Promise.all([
-          supabase.from("jornadas").select("id, dia_number, dia_label, titulo, preletores, data_real").order("dia_number"),
+          supabase.rpc("get_jornadas_seguras", { p_user_id: user.id }),
           supabase.from("progresso_usuario").select("jornada_id, qr_code_escaneado, quiz_concluido, pontos_acumulados").eq("user_id", user.id),
           supabase.rpc("get_user_rank", { target_user_id: user.id }),
         ]);
@@ -95,6 +106,11 @@ function Dashboard() {
     return "locked";
   };
 
+  const handleReveal = async (jornadaId: string) => {
+    const { data } = await supabase.from("jornadas").select("titulo, preletores").eq("id", jornadaId).single();
+    if (data) setRevealedJornadas((prev) => ({ ...prev, [jornadaId]: data as { titulo: string | null; preletores: string[] | null } }));
+  };
+
   const totalPoints = profile?.total_points ?? 0;
   const completedDays = profile?.completed_days ?? 0;
   const isPrivileged = profile?.role === 'admin' || profile?.role === 'pastor';
@@ -109,7 +125,7 @@ function Dashboard() {
         <div className="relative z-10">
           <p className="font-script text-lg text-white opacity-80">Olá,</p>
           <h1 className="font-display text-3xl leading-tight tracking-wider text-white">
-            {(profile?.full_name ?? "Avivado").toUpperCase()}
+            {((profile?.full_name ?? "Avivado").split(" ")[0]).toUpperCase()}
           </h1>
         </div>
         <style>{`
@@ -126,7 +142,7 @@ function Dashboard() {
           style={{ transform: "translateX(55px)" }}
         >
           <img
-            src="/images/rivaldo-png/rivaldo-espionando-2.png"
+            src="/images/rivaldo-png/rivaldo-espionando-2.webp"
             alt=""
             aria-hidden
             draggable={false}
@@ -147,8 +163,17 @@ function Dashboard() {
 
       {/* Checkpoints */}
       <section className="px-5 py-6">
-        <div className="mb-4 flex items-baseline justify-between">
-          <h2 className="font-display text-2xl tracking-wider text-orange">SUA JORNADA</h2>
+        <div className="mb-4 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <h2 className="font-display text-2xl tracking-wider text-orange">SUA JORNADA</h2>
+            <button
+              onClick={() => setShowOnboarding(true)}
+              className="flex h-7 w-7 items-center justify-center rounded-full bg-orange/10 text-orange transition-colors hover:bg-orange/20 active:scale-95"
+              aria-label="Como funciona"
+            >
+              <GraduationCap className="h-4 w-4" />
+            </button>
+          </div>
           <Link to="/ranking" className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground hover:text-orange">
             Ver ranking →
           </Link>
@@ -162,24 +187,37 @@ function Dashboard() {
           </div>
         ) : (
           <div className="grid gap-4 sm:grid-cols-2">
-            {jornadas.map((j) => (
-              <CheckpointCard
-                key={j.id}
-                dayNumber={j.dia_number}
-                dayLabel={j.dia_label ?? `Turno ${j.dia_number}`}
-                title={j.titulo ?? `Turno ${j.dia_number}`}
-                slug={slugify(j.dia_label ?? `turno-${j.dia_number}`)}
-                preletores={j.preletores}
-                pontos={progresso[j.id]?.pontos_acumulados ?? 0}
-                status={computeStatus(j)}
-                isPrivileged={isPrivileged}
-              />
-            ))}
+            {jornadas.map((j) => {
+              const revealed = revealedJornadas[j.id];
+              const isCensored = j.censored && !revealed;
+              return (
+                <CheckpointCard
+                  key={j.id}
+                  dayNumber={j.dia_number}
+                  dayLabel={j.dia_label ?? `Turno ${j.dia_number}`}
+                  title={revealed?.titulo ?? j.titulo}
+                  slug={slugify(j.dia_label ?? `turno-${j.dia_number}`)}
+                  preletores={revealed?.preletores ?? j.preletores}
+                  pontos={progresso[j.id]?.pontos_acumulados ?? 0}
+                  status={computeStatus(j)}
+                  isPrivileged={isPrivileged}
+                  isCensored={isCensored}
+                  onReveal={isPrivileged && j.censored && !revealed ? () => handleReveal(j.id) : undefined}
+                />
+              );
+            })}
           </div>
         )}
       </section>
 
       <BottomNav />
+
+      {showOnboarding && user && (
+        <OnboardingModal
+          userId={user.id}
+          onClose={() => { setShowOnboarding(false); refreshProfile(); }}
+        />
+      )}
     </div>
   );
 }
