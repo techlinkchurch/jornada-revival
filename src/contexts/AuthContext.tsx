@@ -12,7 +12,6 @@ type Profile = {
   total_points: number;
   completed_days: number;
   achievements: string[];
-  is_member: boolean;
 };
 
 type AuthContextValue = {
@@ -21,9 +20,12 @@ type AuthContextValue = {
   profile: Profile | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: string | null }>;
-  signUp: (data: { name: string; email: string; password: string; phone: string; isMember: boolean }) => Promise<{ error: string | null }>;
+  signUp: (data: { name: string; email: string; password: string; phone: string }) => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
+  sendPasswordReset: (email: string, redirectTo?: string) => Promise<{ error: string | null }>;
+  verifyPasswordResetOtp: (email: string, token: string) => Promise<{ error: string | null }>;
+  updatePassword: (newPassword: string) => Promise<{ error: string | null }>;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -68,12 +70,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { error: error?.message ?? null };
   };
 
-  const signUp: AuthContextValue["signUp"] = async ({ name, email, password, phone, isMember }) => {
+  const signUp: AuthContextValue["signUp"] = async ({ name, email, password, phone }) => {
     const { error } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        data: { name, phone, isMember },
+        data: { name, phone },
         emailRedirectTo: typeof window !== "undefined" ? window.location.origin : undefined,
       },
     });
@@ -89,8 +91,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (user?.id) await loadProfile(user.id);
   };
 
+  const sendPasswordReset: AuthContextValue["sendPasswordReset"] = async (email, redirectTo) => {
+    const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo });
+    return { error: error?.message ?? null };
+  };
+
+  const verifyPasswordResetOtp: AuthContextValue["verifyPasswordResetOtp"] = async (email, token) => {
+    const { error } = await supabase.auth.verifyOtp({ email, token, type: 'recovery' });
+    return { error: error?.message ?? null };
+  };
+
+  const updatePassword: AuthContextValue["updatePassword"] = async (newPassword) => {
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+    return { error: error?.message ?? null };
+  };
+
   return (
-    <AuthContext.Provider value={{ session, user, profile, loading, signIn, signUp, signOut, refreshProfile }}>
+    <AuthContext.Provider value={{ session, user, profile, loading, signIn, signUp, signOut, refreshProfile, sendPasswordReset, verifyPasswordResetOtp, updatePassword }}>
       {children}
     </AuthContext.Provider>
   );

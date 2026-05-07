@@ -7,124 +7,107 @@ export type CheckpointCardProps = {
   dayNumber: number;
   dayLabel: string;
   title: string;
-  preletor?: string | null;
+  slug: string;
+  preletores?: string[] | null;
   pontos?: number;
   status: CheckpointStatus;
+  isPrivileged?: boolean;
 };
 
 export function CheckpointCard({
   dayNumber,
   dayLabel,
   title,
-  preletor,
+  slug,
+  preletores,
   pontos = 0,
   status,
+  isPrivileged = false,
 }: CheckpointCardProps) {
-  const baseCard = "relative overflow-hidden rounded-2xl border bg-card transition-transform";
-  const isInteractive = status !== "locked";
+  const isInteractive = isPrivileged || status !== "locked";
 
   const Wrapper = ({ children }: { children: React.ReactNode }) =>
     isInteractive ? (
       <Link
-        to="/jornada/$dia"
-        params={{ dia: String(dayNumber) }}
+        to="/jornada/$dia/$slug"
+        params={{ dia: String(dayNumber), slug: slug }}
         className="block active:scale-[0.98]"
       >
         {children}
       </Link>
     ) : (
-      <div className="opacity-60">{children}</div>
+      <div className="opacity-70">{children}</div>
     );
 
   return (
     <Wrapper>
       <article
-        className={`${baseCard} ${
+        className={`relative flex min-h-[220px] flex-col justify-between overflow-hidden rounded-3xl border p-5 transition-transform ${
           status === "live"
-            ? "border-blue/60 shadow-[var(--shadow-glow-blue)]"
+            ? "border-orange/40 bg-gradient-to-br from-white to-orange/5 shadow-md"
             : status === "unlocked"
-            ? "border-orange/40"
+            ? "border-orange/20 bg-gradient-to-br from-white to-yellow/5 shadow-sm"
             : status === "done"
-            ? "border-success/40"
-            : "border-border"
+            ? "border-success/20 bg-gradient-to-br from-white to-success/5 shadow-sm"
+            : "border-border bg-white shadow-sm"
         }`}
       >
-        {/* Top banner */}
-        <div
-          className={`relative overflow-hidden px-5 py-5 ${
-            status === "live"
-              ? "noise-overlay"
-              : status === "unlocked"
-              ? "noise-overlay"
-              : ""
-          }`}
-          style={{
-            background:
-              status === "live"
-                ? "var(--gradient-aurora)"
-                : status === "unlocked"
-                ? "var(--gradient-fire)"
-                : status === "done"
-                ? "linear-gradient(135deg,#2a6b30,#1a4820)"
-                : "linear-gradient(135deg,#2a2a2a,#1a1a1a)",
-          }}
-        >
-          <div className="relative z-10">
-            <p
-              className={`mb-1 text-[9px] font-extrabold uppercase tracking-[0.18em] ${
-                status === "done" ? "text-cream/40" : "text-ink/60"
-              } ${status === "locked" ? "text-cream/40" : ""}`}
-            >
-              Turno {dayNumber}
-            </p>
-            <h3
-              className={`font-display text-2xl leading-none ${
-                status === "done" ? "text-cream" : "text-ink"
-              } ${status === "locked" ? "text-cream" : ""}`}
-            >
-              {title}
-            </h3>
-            <p
-              className={`mt-1 text-[11px] ${
-                status === "done" ? "text-cream/40" : "text-ink/50"
-              } ${status === "locked" ? "text-cream/40" : ""}`}
-            >
-              {dayLabel}
-            </p>
-          </div>
-
-          {status === "live" && (
-            <div className="absolute right-3 top-3 z-10 flex items-center gap-1.5 rounded-full bg-ink/30 px-2.5 py-1 backdrop-blur-sm">
-              <span className="h-1.5 w-1.5 animate-live-pulse rounded-full bg-cream" />
-              <span className="text-[9px] font-extrabold uppercase tracking-widest text-ink">Ao vivo</span>
-            </div>
-          )}
-          {status === "done" && (
-            <div className="absolute right-3 top-3 flex h-6 w-6 items-center justify-center rounded-full bg-success/30">
-              <Check className="h-3.5 w-3.5 text-success" strokeWidth={3} />
-            </div>
-          )}
-          {status === "locked" && (
-            <div className="absolute right-3 top-3 flex h-6 w-6 items-center justify-center rounded-full bg-cream/10">
-              <Lock className="h-3.5 w-3.5 text-cream/60" />
-            </div>
-          )}
+        {/* Header / Title */}
+        <div className="relative z-10 pr-8">
+          <p
+            className={`mb-1 text-[10px] font-extrabold uppercase tracking-[0.18em] ${
+              status === "done" ? "text-success/80" : "text-muted-foreground"
+            }`}
+          >
+            Turno {dayNumber}
+          </p>
+          <h3 className="font-display text-3xl leading-none text-ink">
+            {title}
+          </h3>
+          <p className="mt-2 text-xs text-muted-foreground">
+            {dayLabel.split("• ")[1] ?? dayLabel}
+          </p>
         </div>
 
-        {/* Body */}
-        <div className="p-4">
-          {preletor && (
-            <p className="mb-3 text-xs leading-relaxed text-muted-foreground">
-              Preletor: <span className="text-foreground">{preletor}</span>
+        {/* Badges on Top Right */}
+        {status === "live" && (
+          <div className="absolute right-4 top-4 z-10 flex items-center gap-1.5 rounded-full border border-orange/20 bg-orange/10 px-2.5 py-1 backdrop-blur-sm">
+            <span className="h-1.5 w-1.5 animate-live-pulse rounded-full bg-orange" />
+            <span className="text-[9px] font-extrabold uppercase tracking-widest text-orange">Ao vivo</span>
+          </div>
+        )}
+        {status === "done" && (
+          <div className="absolute right-4 top-4 flex h-7 w-7 items-center justify-center rounded-full bg-success/10">
+            <Check className="h-4 w-4 text-success" strokeWidth={3} />
+          </div>
+        )}
+        {status === "locked" && (
+          <div className="absolute right-4 top-4 flex h-7 w-7 items-center justify-center rounded-full bg-muted/30">
+            <Lock className="h-4 w-4 text-muted-foreground/50" />
+          </div>
+        )}
+
+        <div className="mt-auto pt-6 flex flex-col gap-4">
+          {preletores && preletores.length > 0 && (
+            <p className="text-sm font-medium text-muted-foreground">
+              {preletores.length > 1 ? "Preletores: " : "Preletor: "}
+              <span className="text-ink">{preletores.join(', ')}</span>
             </p>
           )}
-          <div className="flex items-center justify-between">
-            <span className="font-display text-xl tracking-wider text-orange">
-              {pontos > 0 ? `+${pontos} PTS` : status === "done" ? "CONCLUÍDO" : "ATÉ 450 PTS"}
-            </span>
+          
+          <div className="flex items-end justify-between">
+            <div className="flex flex-col">
+              <span className="mb-0.5 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                {status === "done" ? "Ganhos" : "Recompensa"}
+              </span>
+              <span className="font-display text-2xl tracking-wider text-orange">
+                {pontos > 0 ? `+${pontos} PTS` : status === "done" ? "CONCLUÍDO" : "ATÉ 450 PTS"}
+              </span>
+            </div>
+            
             {status === "live" && (
-              <span className="inline-flex items-center gap-1 rounded-full border border-blue/40 bg-blue/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-blue">
-                <QrCode className="h-3 w-3" /> Escanear
+              <span className="inline-flex items-center gap-1.5 rounded-xl bg-[linear-gradient(135deg,#EC6B28,#F6C441)] px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-white shadow-[var(--shadow-glow-orange)]">
+                <QrCode className="h-4 w-4" /> Escanear
               </span>
             )}
           </div>

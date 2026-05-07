@@ -10,17 +10,24 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as UnlockRouteImport } from './routes/unlock'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as RankingRouteImport } from './routes/ranking'
 import { Route as PerfilRouteImport } from './routes/perfil'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as CadastroRouteImport } from './routes/cadastro'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as JornadaDiaRouteImport } from './routes/jornada.$dia'
+import { Route as JornadaDiaSlugRouteImport } from './routes/jornada/$dia/$slug'
 
 const UnlockRoute = UnlockRouteImport.update({
   id: '/unlock',
   path: '/unlock',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RankingRoute = RankingRouteImport.update({
@@ -38,6 +45,11 @@ const LoginRoute = LoginRouteImport.update({
   path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
+  id: '/forgot-password',
+  path: '/forgot-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DashboardRoute = DashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
@@ -53,9 +65,9 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const JornadaDiaRoute = JornadaDiaRouteImport.update({
-  id: '/jornada/$dia',
-  path: '/jornada/$dia',
+const JornadaDiaSlugRoute = JornadaDiaSlugRouteImport.update({
+  id: '/jornada/$dia/$slug',
+  path: '/jornada/$dia/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
 
@@ -63,32 +75,38 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/cadastro': typeof CadastroRoute
   '/dashboard': typeof DashboardRoute
+  '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
   '/perfil': typeof PerfilRoute
   '/ranking': typeof RankingRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/unlock': typeof UnlockRoute
-  '/jornada/$dia': typeof JornadaDiaRoute
+  '/jornada/$dia/$slug': typeof JornadaDiaSlugRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/cadastro': typeof CadastroRoute
   '/dashboard': typeof DashboardRoute
+  '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
   '/perfil': typeof PerfilRoute
   '/ranking': typeof RankingRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/unlock': typeof UnlockRoute
-  '/jornada/$dia': typeof JornadaDiaRoute
+  '/jornada/$dia/$slug': typeof JornadaDiaSlugRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/cadastro': typeof CadastroRoute
   '/dashboard': typeof DashboardRoute
+  '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
   '/perfil': typeof PerfilRoute
   '/ranking': typeof RankingRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/unlock': typeof UnlockRoute
-  '/jornada/$dia': typeof JornadaDiaRoute
+  '/jornada/$dia/$slug': typeof JornadaDiaSlugRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -96,42 +114,50 @@ export interface FileRouteTypes {
     | '/'
     | '/cadastro'
     | '/dashboard'
+    | '/forgot-password'
     | '/login'
     | '/perfil'
     | '/ranking'
+    | '/reset-password'
     | '/unlock'
-    | '/jornada/$dia'
+    | '/jornada/$dia/$slug'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/cadastro'
     | '/dashboard'
+    | '/forgot-password'
     | '/login'
     | '/perfil'
     | '/ranking'
+    | '/reset-password'
     | '/unlock'
-    | '/jornada/$dia'
+    | '/jornada/$dia/$slug'
   id:
     | '__root__'
     | '/'
     | '/cadastro'
     | '/dashboard'
+    | '/forgot-password'
     | '/login'
     | '/perfil'
     | '/ranking'
+    | '/reset-password'
     | '/unlock'
-    | '/jornada/$dia'
+    | '/jornada/$dia/$slug'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   CadastroRoute: typeof CadastroRoute
   DashboardRoute: typeof DashboardRoute
+  ForgotPasswordRoute: typeof ForgotPasswordRoute
   LoginRoute: typeof LoginRoute
   PerfilRoute: typeof PerfilRoute
   RankingRoute: typeof RankingRoute
+  ResetPasswordRoute: typeof ResetPasswordRoute
   UnlockRoute: typeof UnlockRoute
-  JornadaDiaRoute: typeof JornadaDiaRoute
+  JornadaDiaSlugRoute: typeof JornadaDiaSlugRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -141,6 +167,13 @@ declare module '@tanstack/react-router' {
       path: '/unlock'
       fullPath: '/unlock'
       preLoaderRoute: typeof UnlockRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/ranking': {
@@ -164,6 +197,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/forgot-password': {
+      id: '/forgot-password'
+      path: '/forgot-password'
+      fullPath: '/forgot-password'
+      preLoaderRoute: typeof ForgotPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/dashboard': {
       id: '/dashboard'
       path: '/dashboard'
@@ -185,11 +225,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/jornada/$dia': {
-      id: '/jornada/$dia'
-      path: '/jornada/$dia'
-      fullPath: '/jornada/$dia'
-      preLoaderRoute: typeof JornadaDiaRouteImport
+    '/jornada/$dia/$slug': {
+      id: '/jornada/$dia/$slug'
+      path: '/jornada/$dia/$slug'
+      fullPath: '/jornada/$dia/$slug'
+      preLoaderRoute: typeof JornadaDiaSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -199,11 +239,13 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   CadastroRoute: CadastroRoute,
   DashboardRoute: DashboardRoute,
+  ForgotPasswordRoute: ForgotPasswordRoute,
   LoginRoute: LoginRoute,
   PerfilRoute: PerfilRoute,
   RankingRoute: RankingRoute,
+  ResetPasswordRoute: ResetPasswordRoute,
   UnlockRoute: UnlockRoute,
-  JornadaDiaRoute: JornadaDiaRoute,
+  JornadaDiaSlugRoute: JornadaDiaSlugRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

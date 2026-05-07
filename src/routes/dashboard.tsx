@@ -1,4 +1,4 @@
-import { createFileRoute, Navigate, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -15,7 +15,7 @@ type Jornada = {
   dia_number: number;
   dia_label: string | null;
   titulo: string | null;
-  preletor: string | null;
+  preletores: string[] | null;
   data_real: string | null;
 };
 
@@ -26,32 +26,61 @@ type Progresso = {
   pontos_acumulados: number;
 };
 
+const slugify = (text: string) => 
+  text.toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^\w\s-]/g, "")
+    .replace(/[\s_-]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+
 function Dashboard() {
   const { user, profile, loading } = useAuth();
   const [jornadas, setJornadas] = useState<Jornada[]>([]);
   const [progresso, setProgresso] = useState<Record<string, Progresso>>({});
   const [rank, setRank] = useState<{ position: number; total: number } | null>(null);
   const [dataLoading, setDataLoading] = useState(true);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!loading && !user) {
+      console.log("No user found, redirecting to login...");
+      navigate({ to: "/login", replace: true });
+    }
+  }, [user, loading, navigate]);
 
   useEffect(() => {
     if (!user) return;
     (async () => {
-      const [{ data: js }, { data: pg }, { data: rk }] = await Promise.all([
-        supabase.from("jornadas").select("id, dia_number, dia_label, titulo, preletor, data_real").order("dia_number"),
-        supabase.from("progresso_usuario").select("jornada_id, qr_code_escaneado, quiz_concluido, pontos_acumulados").eq("user_id", user.id),
-        supabase.rpc("get_user_rank", { target_user_id: user.id }),
-      ]);
-      setJornadas((js ?? []) as Jornada[]);
-      const map: Record<string, Progresso> = {};
-      (pg ?? []).forEach((p) => { map[p.jornada_id] = p as Progresso; });
-      setProgresso(map);
-      if (rk && rk[0]) setRank({ position: Number(rk[0].position), total: Number(rk[0].total_users) });
-      setDataLoading(false);
+      try {
+        setDataLoading(true);
+        console.log("Fetching dashboard data for user:", user.id);
+        const [{ data: js }, { data: pg }, { data: rk }] = await Promise.all([
+          supabase.from("jornadas").select("id, dia_number, dia_label, titulo, preletores, data_real").order("dia_number"),
+          supabase.from("progresso_usuario").select("jornada_id, qr_code_escaneado, quiz_concluido, pontos_acumulados").eq("user_id", user.id),
+          supabase.rpc("get_user_rank", { target_user_id: user.id }),
+        ]);
+        
+        console.log("Jornadas fetched:", js?.length);
+        setJornadas((js ?? []) as Jornada[]);
+        
+        const map: Record<string, Progresso> = {};
+        (pg ?? []).forEach((p) => { map[p.jornada_id] = p as Progresso; });
+        setProgresso(map);
+        
+        if (rk && rk[0]) {
+          setRank({ position: Number(rk[0].position), total: Number(rk[0].total_users) });
+        }
+      } catch (err) {
+        console.error("Error loading dashboard data:", err);
+      } finally {
+        setDataLoading(false);
+      }
     })();
-  }, [user]);
+  }, [user?.id]);
 
-  if (loading) return <FullScreenLoader />;
-  if (!user) return <Navigate to="/login" />;
+  if (loading || (!user && !loading)) return <FullScreenLoader />;
+  if (!user) return null;
 
   // Determine status: locked / live / unlocked / done
   // "live" = current turn the user can scan now (first not-yet-unlocked turn)
@@ -68,6 +97,7 @@ function Dashboard() {
 
   const totalPoints = profile?.total_points ?? 0;
   const completedDays = profile?.completed_days ?? 0;
+  const isPrivileged = profile?.role === 'admin' || profile?.role === 'pastor';
 
   return (
     <div className="min-h-screen bg-background pb-24">
@@ -77,16 +107,38 @@ function Dashboard() {
         style={{ background: "var(--gradient-festival)" }}
       >
         <div className="relative z-10">
-          <p className="font-script text-lg text-ink/70">Olá,</p>
-          <h1 className="font-display text-3xl leading-tight tracking-wider text-ink">
+          <p className="font-script text-lg text-white opacity-80">Olá,</p>
+          <h1 className="font-display text-3xl leading-tight tracking-wider text-white">
             {(profile?.full_name ?? "Avivado").toUpperCase()}
           </h1>
+        </div>
+        <style>{`
+          @keyframes rvl-spy {
+            0%,100% { transform: translateY(0px)  rotate(0deg); }
+            35%     { transform: translateY(-7px) rotate(-1.5deg); }
+            70%     { transform: translateY(-3px) rotate(1deg); }
+          }
+          .rvl-espionando { animation: rvl-spy 3.8s ease-in-out infinite; transform-origin: bottom center; }
+        `}</style>
+        {/* Wrapper empurra além da borda direita; overflow-hidden do header recorta */}
+        <div
+          className="pointer-events-none absolute bottom-0 right-0"
+          style={{ transform: "translateX(55px)" }}
+        >
+          <img
+            src="/images/rivaldo-png/rivaldo-espionando-2.png"
+            alt=""
+            aria-hidden
+            draggable={false}
+            className="rvl-espionando block select-none"
+            style={{ height: "148px", width: "148px", objectFit: "contain" }}
+          />
         </div>
       </header>
 
       {/* Stats */}
-      <section className="-mt-4 px-5">
-        <div className="grid grid-cols-3 gap-2 rounded-2xl border border-border bg-card p-4 shadow-lg">
+      <section className="-mt-4 relative z-20 px-5">
+        <div className="grid grid-cols-3 gap-2 rounded-2xl border border-border bg-background p-4 shadow-sm">
           <Stat icon={<Flame className="h-4 w-4 text-orange" />} label="Pontos" value={totalPoints} />
           <Stat icon={<Trophy className="h-4 w-4 text-yellow" />} label="Posição" value={rank ? `${rank.position}º` : "—"} />
           <Stat label="Turnos" value={`${completedDays}/4`} />
@@ -105,7 +157,7 @@ function Dashboard() {
         {dataLoading ? (
           <div className="space-y-3">
             {[0, 1, 2, 3].map((i) => (
-              <div key={i} className="h-40 animate-pulse rounded-2xl bg-card" />
+              <div key={i} className="h-40 animate-pulse rounded-2xl bg-black/[0.06]" />
             ))}
           </div>
         ) : (
@@ -116,9 +168,11 @@ function Dashboard() {
                 dayNumber={j.dia_number}
                 dayLabel={j.dia_label ?? `Turno ${j.dia_number}`}
                 title={j.titulo ?? `Turno ${j.dia_number}`}
-                preletor={j.preletor}
+                slug={slugify(j.dia_label ?? `turno-${j.dia_number}`)}
+                preletores={j.preletores}
                 pontos={progresso[j.id]?.pontos_acumulados ?? 0}
                 status={computeStatus(j)}
+                isPrivileged={isPrivileged}
               />
             ))}
           </div>
@@ -132,11 +186,11 @@ function Dashboard() {
 
 function Stat({ icon, label, value }: { icon?: React.ReactNode; label: string; value: string | number }) {
   return (
-    <div className="text-center">
-      <div className="mb-1 flex items-center justify-center gap-1 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-        {icon} {label}
+    <div className="flex flex-col items-center justify-center py-2">
+      <div className="mb-1.5 flex items-center justify-center gap-1.5 text-[11px] font-bold uppercase tracking-widest text-foreground opacity-60">
+        {icon} <span>{label}</span>
       </div>
-      <div className="font-display text-2xl tracking-wider text-foreground">{value}</div>
+      <div className="font-display text-3xl font-bold tracking-wider text-ink">{value}</div>
     </div>
   );
 }

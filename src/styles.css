@@ -56,43 +56,45 @@
 .dark {
   --radius: 0.625rem;
 
-  /* Brand raw values (oklch) */
-  --brand-ink: oklch(0.22 0 0);                /* #1A1A1A */
-  --brand-cream: oklch(0.92 0.04 80);          /* #EDE3D0 */
-  --brand-orange: oklch(0.71 0.18 48);         /* #F5823A */
-  --brand-yellow: oklch(0.86 0.17 87);         /* #F5C842 */
-  --brand-red: oklch(0.62 0.23 28);            /* #E8352A */
-  --brand-blue: oklch(0.74 0.09 220);          /* #5BB8D4 */
+  /* Brand raw values */
+  --brand-ink: #1A1A1A;
+  --brand-cream: #F2ECD9;
+  --brand-card: #F7F5EF;
+  --brand-orange: #EC6B28;
+  --brand-yellow: #F6C441;
+  --brand-red: #EC4228;
+  --brand-blue: #5DB7D0;
 
-  --background: var(--brand-ink);
-  --foreground: var(--brand-cream);
+  --background: var(--brand-cream);
+  --foreground: var(--brand-ink);
 
-  --card: oklch(0.26 0 0);                     /* #222 */
+  /* Containers escuros para criar profundidade */
+  --card: var(--brand-ink);
   --card-foreground: var(--brand-cream);
 
-  --popover: oklch(0.26 0 0);
+  --popover: var(--brand-ink);
   --popover-foreground: var(--brand-cream);
 
   --primary: var(--brand-orange);
   --primary-foreground: var(--brand-cream);
 
-  --secondary: var(--brand-cream);
+  --secondary: var(--brand-card);
   --secondary-foreground: var(--brand-ink);
 
-  --muted: oklch(0.30 0 0);
-  --muted-foreground: oklch(0.62 0.02 50);     /* #9a8e80 */
+  --muted: #E2DAC4;
+  --muted-foreground: #736C5A;
 
-  --accent: oklch(0.30 0.05 60);
-  --accent-foreground: var(--brand-cream);
+  --accent: var(--brand-yellow);
+  --accent-foreground: var(--brand-ink);
 
   --destructive: var(--brand-red);
   --destructive-foreground: var(--brand-cream);
 
-  --success: oklch(0.62 0.13 145);             /* #6aac70 */
+  --success: #6aac70;
   --success-foreground: var(--brand-ink);
 
-  --border: oklch(1 0 0 / 8%);
-  --input: oklch(0.30 0 0);
+  --border: rgba(26, 26, 26, 0.1);
+  --input: rgba(26, 26, 26, 0.05);
   --ring: var(--brand-orange);
 
   /* Gradients */

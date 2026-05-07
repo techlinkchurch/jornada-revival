@@ -1,4 +1,4 @@
-import { createFileRoute, Navigate, Link } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { ArrowLeft, Trophy } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
@@ -27,11 +27,18 @@ type Turno = { dia_number: number; dia_label: string | null };
 
 function RankingPage() {
   const { user, loading } = useAuth();
+  const navigate = useNavigate();
   const [tab, setTab] = useState<"geral" | number>("geral");
   const [turnos, setTurnos] = useState<Turno[]>([]);
   const [rows, setRows] = useState<RankRow[]>([]);
   const [meRank, setMeRank] = useState<{ position: number; total: number; points: number } | null>(null);
   const [loadingData, setLoadingData] = useState(true);
+
+  useEffect(() => {
+    if (!loading && !user) {
+      navigate({ to: "/login", replace: true });
+    }
+  }, [user, loading, navigate]);
 
   useEffect(() => {
     supabase.from("jornadas").select("dia_number, dia_label").order("dia_number").then(({ data }) => {
@@ -43,30 +50,35 @@ function RankingPage() {
     if (!user) return;
     setLoadingData(true);
     (async () => {
-      if (tab === "geral") {
-        const [{ data }, { data: me }] = await Promise.all([
-          supabase.rpc("get_ranking", { limit_count: 100 }),
-          supabase.rpc("get_user_rank", { target_user_id: user.id }),
-        ]);
-        setRows((data ?? []) as RankRow[]);
-        if (me && me[0]) {
-          setMeRank({
-            position: Number(me[0].position),
-            total: Number(me[0].total_users),
-            points: Number(me[0].user_total_points),
-          });
+      try {
+        if (tab === "geral") {
+          const [{ data }, { data: me }] = await Promise.all([
+            supabase.rpc("get_ranking", { limit_count: 100 }),
+            supabase.rpc("get_user_rank", { target_user_id: user.id }),
+          ]);
+          setRows((data ?? []) as RankRow[]);
+          if (me && me[0]) {
+            setMeRank({
+              position: Number(me[0].position),
+              total: Number(me[0].total_users),
+              points: Number(me[0].user_total_points),
+            });
+          }
+        } else {
+          const { data } = await supabase.rpc("get_turno_ranking", { p_turno_number: tab, p_limit: 100 });
+          setRows((data ?? []) as RankRow[]);
+          setMeRank(null);
         }
-      } else {
-        const { data } = await supabase.rpc("get_turno_ranking", { p_turno_number: tab, p_limit: 100 });
-        setRows((data ?? []) as RankRow[]);
-        setMeRank(null);
+      } catch (err) {
+        console.error("Error loading ranking data:", err);
+      } finally {
+        setLoadingData(false);
       }
-      setLoadingData(false);
     })();
-  }, [tab, user]);
+  }, [tab, user?.id]);
 
   if (loading) return <Loader />;
-  if (!user) return <Navigate to="/login" />;
+  if (!user) return null;
 
   return (
     <div className="min-h-screen bg-background pb-24">
@@ -74,21 +86,21 @@ function RankingPage() {
         className="noise-overlay relative animate-gradient overflow-hidden px-5 pb-8 pt-10"
         style={{ background: "var(--gradient-festival)" }}
       >
-        <Link to="/dashboard" className="relative z-10 mb-3 inline-flex items-center gap-2 text-sm text-ink/70 hover:text-ink">
+        <Link to="/dashboard" className="relative z-10 mb-3 inline-flex items-center gap-2 text-sm text-white/70 hover:text-white">
           <ArrowLeft className="h-4 w-4" /> Jornada
         </Link>
         <div className="relative z-10 flex items-end justify-between">
           <div>
-            <p className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-ink/60">Pódio</p>
-            <h1 className="font-display text-4xl leading-none tracking-wider text-ink">RANKING</h1>
+            <p className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-white/60">Pódio</p>
+            <h1 className="font-display text-4xl leading-none tracking-wider text-white">RANKING</h1>
           </div>
-          <Trophy className="h-10 w-10 text-ink/70" />
+          <Trophy className="h-10 w-10 text-white/70" />
         </div>
       </header>
 
       {/* Tabs */}
       <div className="sticky top-0 z-20 -mt-4 px-5">
-        <div className="flex gap-2 overflow-x-auto rounded-2xl border border-border bg-card p-2 shadow-lg [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <div className="flex gap-2 overflow-x-auto rounded-2xl border border-border bg-white/80 p-2 shadow-sm backdrop-blur-md [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           <TabBtn active={tab === "geral"} onClick={() => setTab("geral")}>Geral</TabBtn>
           {turnos.map((t) => (
             <TabBtn key={t.dia_number} active={tab === t.dia_number} onClick={() => setTab(t.dia_number)}>
@@ -115,10 +127,10 @@ function RankingPage() {
       <section className="px-5 py-5">
         {loadingData ? (
           <div className="space-y-2">
-            {[0,1,2,3,4].map((i) => <div key={i} className="h-14 animate-pulse rounded-xl bg-card" />)}
+            {[0,1,2,3,4].map((i) => <div key={i} className="h-14 animate-pulse rounded-xl bg-black/[0.06]" />)}
           </div>
         ) : rows.length === 0 ? (
-          <div className="rounded-2xl border border-border bg-card p-8 text-center text-sm text-muted-foreground">
+          <div className="rounded-2xl border border-border bg-white p-8 text-center text-sm text-muted-foreground shadow-sm">
             Ainda não há pontuação para este turno.
           </div>
         ) : (
@@ -132,9 +144,9 @@ function RankingPage() {
               return (
                 <li
                   key={`${id}-${i}`}
-                  className={`flex items-center gap-3 rounded-xl border px-4 py-3 transition-colors ${
+                  className={`flex items-center gap-3 rounded-xl border px-4 py-3 transition-colors shadow-sm ${
                     isMe ? "border-orange/50 bg-orange/5"
-                    : pos <= 3 ? "border-yellow/30 bg-yellow/5" : "border-border bg-card"
+                    : pos <= 3 ? "border-yellow/30 bg-yellow/5" : "border-border bg-white"
                   }`}
                 >
                   <PositionBadge pos={pos} isMe={isMe} />
@@ -166,7 +178,7 @@ function TabBtn({ active, children, onClick }: { active: boolean; children: Reac
     <button
       onClick={onClick}
       className={`flex-shrink-0 rounded-lg px-4 py-2 font-display text-sm tracking-wider transition-all ${
-        active ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
+        active ? "bg-[linear-gradient(135deg,#EC6B28,#F6C441)] text-white shadow-[var(--shadow-glow-orange)]" : "text-muted-foreground hover:text-ink hover:bg-muted/20"
       }`}
     >
       {children}
@@ -175,7 +187,7 @@ function TabBtn({ active, children, onClick }: { active: boolean; children: Reac
 }
 
 function PositionBadge({ pos, isMe }: { pos: number; isMe: boolean }) {
-  let style = "bg-cream/10 text-muted-foreground";
+  let style = "bg-muted/30 text-ink/70";
   if (pos === 1) style = "text-ink";
   else if (pos === 2) style = "text-ink";
   else if (pos === 3) style = "text-cream";

@@ -13,7 +13,7 @@ export function BottomNav() {
   const { signOut } = useAuth();
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-40 border-t border-border bg-card/95 backdrop-blur-md pb-[env(safe-area-inset-bottom)]">
+    <nav className="fixed bottom-0 left-0 right-0 z-40 border-t border-border bg-white/80 backdrop-blur-lg pb-[env(safe-area-inset-bottom)] shadow-[0_-4px_24px_rgba(0,0,0,0.02)]">
       <div className="mx-auto flex max-w-md items-stretch justify-around px-2 py-2">
         {items.map(({ to, label, icon: Icon }) => {
           const active = location.pathname.startsWith(to);
