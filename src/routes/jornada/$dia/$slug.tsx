@@ -26,7 +26,15 @@ type Jornada = {
   versiculo_referencia: string | null;
   ensinamentos: string[] | null;
   video_url_proximo_dia: string | null;
+  liberacao_at: string | null;
 };
+
+function toDatetimeLocal(iso: string | null): string {
+  if (!iso) return "";
+  const d = new Date(iso);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
 
 type Progresso = {
   id: string;
@@ -741,6 +749,7 @@ function EditJornadaModal({
   const [versiculo, setVersiculo] = useState(jornada.versiculo_texto ?? "");
   const [referencia, setReferencia] = useState(jornada.versiculo_referencia ?? "");
   const [videoUrl, setVideoUrl] = useState(jornada.video_url_proximo_dia ?? "");
+  const [liberacaoAt, setLiberacaoAt] = useState(toDatetimeLocal(jornada.liberacao_at));
   const [saving, setSaving] = useState(false);
 
   // Quiz state
@@ -798,6 +807,7 @@ function EditJornadaModal({
         versiculo_texto: versiculo || null,
         versiculo_referencia: referencia || null,
         video_url_proximo_dia: videoUrl || null,
+        liberacao_at: liberacaoAt ? new Date(liberacaoAt).toISOString() : null,
       })
       .eq("id", jornada.id);
 
@@ -846,6 +856,21 @@ function EditJornadaModal({
           <Field label="Versículo" value={versiculo} onChange={setVersiculo} placeholder="Texto do versículo" multiline />
           <Field label="Referência" value={referencia} onChange={setReferencia} placeholder="Ex: Atos 2:17" />
           <Field label="URL do Vídeo (YouTube embed)" value={videoUrl} onChange={setVideoUrl} placeholder="https://youtube.com/embed/..." />
+
+          {jornada.dia_number >= 2 && (
+            <div>
+              <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">
+                Liberação do QR Code
+              </label>
+              <input
+                type="datetime-local"
+                value={liberacaoAt}
+                onChange={(e) => setLiberacaoAt(e.target.value)}
+                className="w-full rounded-lg border-[1.5px] border-input bg-white px-3 py-2.5 text-sm text-ink outline-none focus:border-orange"
+              />
+              <p className="mt-1 text-[10px] text-muted-foreground">Horário no fuso do seu dispositivo. O QR Code só poderá ser escaneado após este momento.</p>
+            </div>
+          )}
 
           {/* --- Quiz --- */}
           <div className="mt-2 border-t border-border pt-4">
