@@ -15,8 +15,21 @@ function CadastroPage() {
   const [submitting, setSubmitting] = useState(false);
   const [nameError, setNameError] = useState("");
 
+  // Toda navegação pós-auth fica aqui — evita conflito com handleConfirm
   useEffect(() => {
-    if (user) navigate({ to: "/dashboard" });
+    if (!user) return;
+    const pending = sessionStorage.getItem("pending_unlock");
+    if (pending) {
+      try {
+        const { day, token } = JSON.parse(pending);
+        sessionStorage.removeItem("pending_unlock");
+        navigate({ to: "/unlock", search: { day, token } });
+      } catch {
+        navigate({ to: "/dashboard" });
+      }
+    } else {
+      navigate({ to: "/dashboard" });
+    }
   }, [user, navigate]);
 
   const [showConfirm, setShowConfirm] = useState(false);
@@ -67,18 +80,7 @@ function CadastroPage() {
       return;
     }
     toast.success("Conta criada! Você já pode jogar.");
-    const pending = sessionStorage.getItem("pending_unlock");
-    if (pending) {
-      try {
-        const { day, token } = JSON.parse(pending);
-        sessionStorage.removeItem("pending_unlock");
-        navigate({ to: "/unlock", search: { day, token } });
-      } catch {
-        navigate({ to: "/dashboard" });
-      }
-    } else {
-      navigate({ to: "/dashboard" });
-    }
+    // navegação tratada pelo useEffect acima quando user atualizar
   };
 
   return (

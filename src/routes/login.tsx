@@ -15,20 +15,9 @@ function LoginPage() {
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
+  // Toda navegação pós-auth fica aqui — evita conflito com handleSubmit
   useEffect(() => {
-    if (user) navigate({ to: "/dashboard", replace: true });
-  }, [user, navigate]);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSubmitting(true);
-    const { error } = await signIn(email, password);
-    setSubmitting(false);
-    if (error) {
-      toast.error(error === "Invalid login credentials" ? "Email ou senha inválidos" : error);
-      return;
-    }
-    toast.success("Bem-vindo de volta!");
+    if (!user) return;
     const pending = sessionStorage.getItem("pending_unlock");
     if (pending) {
       try {
@@ -41,6 +30,19 @@ function LoginPage() {
     } else {
       navigate({ to: "/dashboard", replace: true });
     }
+  }, [user, navigate]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmitting(true);
+    const { error } = await signIn(email, password);
+    setSubmitting(false);
+    if (error) {
+      toast.error(error === "Invalid login credentials" ? "Email ou senha inválidos" : error);
+      return;
+    }
+    toast.success("Bem-vindo de volta!");
+    // navegação tratada pelo useEffect acima quando user atualizar
   };
 
   return (

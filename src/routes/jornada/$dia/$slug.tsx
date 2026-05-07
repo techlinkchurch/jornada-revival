@@ -242,7 +242,7 @@ function UnlockSection({
           <div className="flex gap-4">
             <div className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-orange font-bold text-[10px] text-white">1</div>
             <p className="text-sm leading-relaxed text-muted-foreground">
-              Localize o <span className="font-bold text-ink">QR Code</span> impresso nos totens ou telões do templo após a ministração.
+              Localize o <span className="font-bold text-ink">QR Code</span> impresso nos totens ou telões da nave após a ministração.
             </p>
           </div>
           <div className="flex gap-4">

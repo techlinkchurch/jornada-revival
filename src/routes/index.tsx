@@ -52,7 +52,7 @@ function Index() {
               JOGUE, APRENDA, VIVA O AVIVAMENTO
             </h2>
             <p className="text-sm leading-relaxed text-muted-foreground">
-              Escaneie o QR Code no templo após cada pregação, libere conteúdos
+              Escaneie o QR Code na nave após cada pregação, libere conteúdos
               exclusivos, responda quizzes-relâmpago e suba no ranking do evento.
             </p>
 

@@ -82,7 +82,7 @@ export function QRScanner({ onScan, onClose }: QRScannerProps) {
         {/* Instructions */}
         <div className="mt-8 max-w-xs text-center">
           <p className="text-sm leading-relaxed text-white/80">
-            Aponte sua câmera para o <span className="font-bold text-orange">QR Code</span> impresso no templo para liberar seu acesso e pontos.
+            Aponte sua câmera para o <span className="font-bold text-orange">QR Code</span> impresso na nave para liberar seu acesso e pontos.
           </p>
         </div>
       </div>
