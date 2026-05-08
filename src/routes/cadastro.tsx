@@ -11,7 +11,7 @@ export const Route = createFileRoute("/cadastro")({
 function CadastroPage() {
   const { signUp, user } = useAuth();
   const navigate = useNavigate();
-  const [form, setForm] = useState({ name: "", email: "", phone: "", password: "" });
+  const [form, setForm] = useState({ name: "", email: "", phone: "", password: "", newsletter: false });
   const [submitting, setSubmitting] = useState(false);
   const [nameError, setNameError] = useState("");
   const didNavigate = useRef(false);
@@ -62,7 +62,7 @@ function CadastroPage() {
 
   const handleConfirm = async () => {
     setSubmitting(true);
-    const { error } = await signUp(form);
+    const { error } = await signUp({ ...form });
     setSubmitting(false);
     if (error) {
       toast.error(error);
@@ -100,6 +100,18 @@ function CadastroPage() {
             <Field icon={<Mail size={16} />} label="Email" type="email" value={form.email} onChange={(v) => setForm({ ...form, email: v })} required />
             <Field icon={<Phone size={16} />} label="Telefone" value={form.phone} onChange={(v) => setForm({ ...form, phone: v })} placeholder="(11) 99999-9999" />
             <Field icon={<Lock size={16} />} label="Senha (mín. 6)" type="password" value={form.password} onChange={(v) => setForm({ ...form, password: v })} required />
+
+            <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-white/10 bg-white/5 px-4 py-3 transition-colors hover:bg-white/10">
+              <input
+                type="checkbox"
+                checked={form.newsletter}
+                onChange={(e) => setForm({ ...form, newsletter: e.target.checked })}
+                className="mt-0.5 h-4 w-4 flex-shrink-0 accent-orange"
+              />
+              <span className="text-[12px] leading-relaxed text-card-foreground opacity-70">
+                Quero receber novidades sobre a Revival Conference: eventos futuros, movimentações e muito mais.
+              </span>
+            </label>
 
             <button
               type="submit"

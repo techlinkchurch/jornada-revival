@@ -13,6 +13,7 @@ type Profile = {
   completed_days: number;
   achievements: string[];
   onboarding_visto: boolean;
+  newsletter: boolean;
 };
 
 type AuthContextValue = {
@@ -21,7 +22,7 @@ type AuthContextValue = {
   profile: Profile | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: string | null }>;
-  signUp: (data: { name: string; email: string; password: string; phone: string }) => Promise<{ error: string | null }>;
+  signUp: (data: { name: string; email: string; password: string; phone: string; newsletter?: boolean }) => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
   sendPasswordReset: (email: string, redirectTo?: string) => Promise<{ error: string | null }>;
@@ -71,15 +72,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { error: error?.message ?? null };
   };
 
-  const signUp: AuthContextValue["signUp"] = async ({ name, email, password, phone }) => {
-    const { error } = await supabase.auth.signUp({
+  const signUp: AuthContextValue["signUp"] = async ({ name, email, password, phone, newsletter }) => {
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        data: { name, phone },
+        data: { name, phone, newsletter: newsletter ?? false },
         emailRedirectTo: typeof window !== "undefined" ? window.location.origin : undefined,
       },
     });
+    if (!error && data.user) {
+      await supabase.from("profiles").update({ newsletter: newsletter ?? false }).eq("id", data.user.id);
+    }
     return { error: error?.message ?? null };
   };
 

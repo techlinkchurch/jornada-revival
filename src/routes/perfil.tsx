@@ -19,6 +19,7 @@ function PerfilPage() {
   const [journey, setJourney] = useState<Journey[]>([]);
   const [conquistas, setConquistas] = useState<Conquista[]>([]);
   const [rank, setRank] = useState<{ position: number; total: number } | null>(null);
+  const [censoredMap, setCensoredMap] = useState<Record<number, boolean>>({});
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -32,14 +33,20 @@ function PerfilPage() {
     if (!user) return;
     (async () => {
       try {
-        const [{ data: jd }, { data: cq }, { data: rk }] = await Promise.all([
+        const [{ data: jd }, { data: cq }, { data: rk }, { data: js }] = await Promise.all([
           supabase.rpc("get_user_journey_details", { target_user_id: user.id }),
           supabase.from("conquistas_config").select("id, name, description"),
           supabase.rpc("get_user_rank", { target_user_id: user.id }),
+          supabase.rpc("get_jornadas_seguras", { p_user_id: user.id }),
         ]);
         setJourney((jd ?? []) as Journey[]);
         setConquistas((cq ?? []) as Conquista[]);
         if (rk && rk[0]) setRank({ position: Number(rk[0].position), total: Number(rk[0].total_users) });
+        const map: Record<number, boolean> = {};
+        ((js ?? []) as Array<{ dia_number: number; censored: boolean }>).forEach((j) => {
+          map[j.dia_number] = j.censored;
+        });
+        setCensoredMap(map);
       } catch (err) {
         console.error("Error loading profile data:", err);
       }
@@ -157,27 +164,34 @@ function PerfilPage() {
       <section className="px-5 py-6">
         <h2 className="mb-3 font-display text-2xl tracking-wider text-orange">MINHA JORNADA</h2>
         <ul className="space-y-2">
-          {journey.map((j) => (
-            <li
-              key={j.day_number}
-              className={`flex items-center gap-3 rounded-xl border px-4 py-3 shadow-sm ${
-                j.completed ? "border-success/40 bg-success/5" : "border-border bg-white"
-              }`}
-            >
-              <div className={`flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full font-display text-base ${
-                j.completed ? "bg-success/20 text-success" : "bg-muted/30 text-ink/70"
-              }`}>
-                {j.completed ? <Check className="h-4 w-4" strokeWidth={3} /> : j.day_number}
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-semibold text-foreground">{j.title ?? `Turno ${j.day_number}`}</p>
-                <p className="text-[11px] text-muted-foreground">
-                  {j.completed ? "Quiz concluído" : "Aguardando"}
-                </p>
-              </div>
-              <span className="font-display text-lg tracking-wider text-orange">{Math.round(j.points_earned)}</span>
-            </li>
-          ))}
+          {journey.map((j) => {
+            const censored = censoredMap[j.day_number] ?? false;
+            return (
+              <li
+                key={j.day_number}
+                className={`flex items-center gap-3 rounded-xl border px-4 py-3 shadow-sm ${
+                  j.completed ? "border-success/40 bg-success/5" : "border-border bg-white"
+                }`}
+              >
+                <div className={`flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full font-display text-base ${
+                  j.completed ? "bg-success/20 text-success" : "bg-muted/30 text-ink/70"
+                }`}>
+                  {j.completed ? <Check className="h-4 w-4" strokeWidth={3} /> : j.day_number}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className={`truncate text-sm font-semibold text-foreground ${censored ? "blur-sm select-none" : ""}`}>
+                    {censored ? "Tema do Turno" : (j.title ?? `Turno ${j.day_number}`)}
+                  </p>
+                  <p className="text-[11px] text-muted-foreground">
+                    {j.completed ? "Quiz concluído" : "Aguardando"}
+                  </p>
+                </div>
+                <span className={`font-display text-lg tracking-wider text-orange ${censored ? "blur-sm select-none" : ""}`}>
+                  {censored ? "000" : Math.round(j.points_earned)}
+                </span>
+              </li>
+            );
+          })}
         </ul>
       </section>
 
