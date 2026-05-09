@@ -141,7 +141,7 @@ function RankingPage() {
                     </p>
                   </div>
                   <span className={`font-display text-xl tracking-wider ${
-                    pos === 1 ? "text-yellow" : pos === 2 ? "text-cream/70" : pos === 3 ? "text-[#CD9F5A]" : "text-orange"
+                    pos === 1 ? "text-yellow" : pos === 2 ? "text-slate-400" : pos === 3 ? "text-[#CD9F5A]" : "text-orange"
                   }`}>
                     {pts}
                   </span>

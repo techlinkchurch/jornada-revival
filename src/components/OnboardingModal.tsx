@@ -26,7 +26,7 @@ const STEPS = [
   {
     icon: <Trophy className="h-5 w-5 text-yellow-400" />,
     title: "Suba no Ranking",
-    desc: "Acumule pontos nos 4 turnos e dispute o topo do ranking com os outros participantes da Revival Conference!",
+    desc: "Acumule pontos nos 3 turnos e dispute o topo do ranking com os outros participantes da Revival Conference!",
   },
 ];
 

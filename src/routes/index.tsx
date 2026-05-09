@@ -41,7 +41,7 @@ function Index() {
               CONFERENCE
             </h1>
             <p className="mx-auto mt-4 max-w-xs text-sm font-semibold uppercase tracking-[0.18em] text-white opacity-80">
-              2 dias · 4 turnos · 1 jornada
+              2 dias · 3 turnos · 1 jornada
             </p>
           </div>
         </header>

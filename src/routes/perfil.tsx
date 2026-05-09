@@ -156,7 +156,7 @@ function PerfilPage() {
         <div className="grid grid-cols-3 gap-2 rounded-2xl border border-border bg-background p-4 shadow-sm">
           <Stat label="Pontos" value={profile?.total_points ?? 0} />
           <Stat label="Posição" value={rank ? `${rank.position}º` : "—"} />
-          <Stat label="Turnos" value={`${profile?.completed_days ?? 0}/4`} />
+          <Stat label="Turnos" value={`${profile?.completed_days ?? 0}/3`} />
         </div>
       </div>
 

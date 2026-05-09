@@ -157,7 +157,7 @@ function Dashboard() {
         <div className="grid grid-cols-3 gap-2 rounded-2xl border border-border bg-background p-4 shadow-sm">
           <Stat icon={<Flame className="h-4 w-4 text-orange" />} label="Pontos" value={totalPoints} />
           <Stat icon={<Trophy className="h-4 w-4 text-yellow" />} label="Posição" value={rank ? `${rank.position}º` : "—"} />
-          <Stat label="Turnos" value={`${completedDays}/4`} />
+          <Stat label="Turnos" value={`${completedDays}/3`} />
         </div>
       </section>
 
@@ -181,7 +181,7 @@ function Dashboard() {
 
         {dataLoading ? (
           <div className="space-y-3">
-            {[0, 1, 2, 3].map((i) => (
+            {[0, 1, 2].map((i) => (
               <div key={i} className="h-40 animate-pulse rounded-2xl bg-black/[0.06]" />
             ))}
           </div>
